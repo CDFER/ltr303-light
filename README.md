@@ -43,3 +43,10 @@ if (light.isConnected(Wire, &Serial) == true){...
 ## 🖼️ Schematic
 ![Schematic](/images/schematic.png)
 - I have tested this up to 400kbps with the esp32 and it works great (only using esp32 internal pullups)
+
+
+## Based on the awesome work of Lovelesh Patel @thingtronics
+Origin created by Lovelesh Patel in 2015
+https://github.com/automote/LTR303
+
+MIT license
