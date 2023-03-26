@@ -3,14 +3,14 @@ This is a library to interface with the LTR303 light sensor in Arduino using the
 
 ## Features
 - use multiple I2C Busses
-- option to auto adjust gain setting in flight
+- option to auto-adjust the gain setting in flight
 - doxygen comments for all public functions
 - returns error codes
 - isConnected() function 
 
 ## Warnings
 - not all functions are implemented
-- not compatible with other ltr303 arduino libraries
+- not compatible with other ltr303 Arduino libraries
 - only tested with the esp32
 - under development (as of March 2023)
 
@@ -34,8 +34,8 @@ vTaskDelay(400 / portTICK_PERIOD_MS);
 
 ### Verify Correct Sensor Connection
 checks for correct  i2c response, manufacturer id and part id.
-Prints human readable error report to provided interface stream (serial by default)
-@returns true if device correctly connected, otherwise false
+Prints a human-readable error report to provided interface stream (serial by default)
+@returns true if the device is correctly connected, otherwise false
 ```c++
 if (light.isConnected(Wire, &Serial) == true){...
 ```
