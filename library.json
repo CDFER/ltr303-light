@@ -1,13 +1,12 @@
 {
-  "name": "LTR303",
+  "name": "ltr303-light",
   "keywords": "sensor, light",
-  "description": "A light sensor library for LTR303",
+  "description": "A library for LTR303",
   "repository":
   {
     "type": "git",
-    "url": "https://github.com/automote/LTR303"
+    "url": "https://github.com/CDFER/ltr303-light.git"
   },
   "frameworks": "arduino",
-  "platforms": "atmelavr",
-  "examples": "examples/*/*.ino"
+  "platforms": "espressif32"
 }

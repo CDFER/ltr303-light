@@ -1,42 +1,45 @@
 # LTR303 Library
-
 This is a library to interface with the LTR303 light sensor in Arduino using the I2C protocol.
 
 ## Features
-- use multiple I2C Busses -> scd4x.begin(Wire1);
+- use multiple I2C Busses
+- option to auto adjust gain setting in flight
+- doxygen comments for all public functions
+- returns error codes
+- isConnected() function 
 
 ## Warnings
 - not all functions are implemented
 - not compatible with other ltr303 arduino libraries
 - only tested with the esp32
-- under active development
+- under development (as of March 2023)
 
 ### Setup
 ```c++
-#include "scd4x.h"
-scd4x scd4x;
-double CO2 = 0, temperature = 0, humidity = 0;
-
+#include "ltr303.h"
+LTR303 light;
+double lux = 0;
 
 Wire.begin();
-scd4x.begin(Wire);
-scd4x.startPeriodicMeasurement();
+light.begin(GAIN_48X, EXPOSURE_400ms, true);
 ```
+
 ### Loop
 ```c++
-while (scd4x.isDataReady() == false) {
-	vTaskDelay(50 / portTICK_PERIOD_MS);
-}
+light.getLux(lux);
+Serial.printf("%8.4f,\n\r",lux);
 
-if (scd4x.readMeasurement(CO2, temperature, humidity) == 0) {
-	Serial.printf("%4.0f,%2.1f,%1.0f\n", CO2, temperature, humidity);
-}
-vTaskDelay(4750 / portTICK_PERIOD_MS);
+vTaskDelay(400 / portTICK_PERIOD_MS);
+```
+
+### Verify Correct Sensor Connection
+checks for correct  i2c response, manufacturer id and part id.
+Prints human readable error report to provided interface stream (serial by default)
+@returns true if device correctly connected, otherwise false
+```c++
+if (light.isConnected(Wire, &Serial) == true){...
 ```
 
 ## 🖼️ Schematic
 ![Schematic](/images/schematic.png)
-- the scd4x sensor can draw up to 205ma peaks at 3.3V (only 18ma average) so make sure you have a robust power source (the above schematic has been tested to work)
-- you only need to solder the 6 pins shown and the thermal pad on the underside to get it working
-- unfortunately I have not found a way to easily solder these sensors with a soldering iron, a oven or hotplate seems to be the only way
-- look out for a temperature offset if you place the sensor in a case of sorts
+- I have tested this up to 400kbps with the esp32 and it works great (only using esp32 internal pullups)

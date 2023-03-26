@@ -1,10 +1,12 @@
 /*
-	LTR303 illumination sensor library for Arduino
+	LTR303 sensor library for Arduino
 	Lovelesh, thingTronics
-	
-The MIT License (MIT)
+	Chris Dirks, keaStudios
+
+Shared under the MIT License
 
 Copyright (c) 2015 thingTronics Limited
+Copyright (c) 2023 Chris Dirks
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -23,318 +25,184 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
-
-version 0.1
 */
 
 #ifndef LTR303_h
 #define LTR303_h
 
-#include "Arduino.h"
+#include <Arduino.h>
+#include <Wire.h>
 
-#define LTR303_ADDR   0x29 // default address
+#define LTR303_ADDR 0x29  // default address
 
 // LTR303 register addresses
-#define LTR303_CONTR         0x80
-#define LTR303_MEAS_RATE     0x85
-#define LTR303_PART_ID       0x86
-#define LTR303_MANUFAC_ID    0x87
-#define LTR303_DATA_CH1_0    0x88
-#define LTR303_DATA_CH1_1    0x89
-#define LTR303_DATA_CH0_0    0x8A
-#define LTR303_DATA_CH0_1    0x8B
-#define LTR303_STATUS		 0x8C
-#define LTR303_INTERRUPT     0x8F
-#define LTR303_THRES_UP_0    0x97
-#define LTR303_THRES_UP_1	 0x98
-#define LTR303_THRES_LOW_0   0x99
-#define LTR303_THRES_LOW_1   0x9A
-#define LTR303_INTR_PERS     0x9E
+#define LTR303_CONTR 0x80
+#define LTR303_MEAS_RATE 0x85
+#define LTR303_PART_ID 0x86
+#define LTR303_MANUFAC_ID 0x87
+#define LTR303_DATA_CH1_0 0x88
+#define LTR303_DATA_CH1_1 0x89
+#define LTR303_DATA_CH0_0 0x8A
+#define LTR303_DATA_CH0_1 0x8B
+#define LTR303_STATUS 0x8C
+// #define LTR303_INTERRUPT 0x8F
+// #define LTR303_THRES_UP_0 0x97
+// #define LTR303_THRES_UP_1 0x98
+// #define LTR303_THRES_LOW_0 0x99
+// #define LTR303_THRES_LOW_1 0x9A
+// #define LTR303_INTR_PERS 0x9E
+
+// gain = 0  => 1X gain (default)
+// gain = 1  => 2X gain
+// gain = 2  => 4X gain
+// gain = 3  => 8X gain
+// gain = 4, invalid
+// gain = 5, invalid
+// gain = 6  => 48X gain
+// gain = 7  => 96X gain
+enum ltr303Gain {
+	GAIN_1X = 0,
+	GAIN_2X = 1,
+	GAIN_4X = 2,
+	GAIN_8X = 3,
+	GAIN_48X = 6,
+	GAIN_96X = 7
+};
+
+// Exposure = 0 => 100ms (default)
+// Exposure = 1 => 50ms
+// Exposure = 2 => 200ms
+// Exposure = 3 => 400ms
+// Exposure = 4 => 150ms
+// Exposure = 5 => 250ms
+// Exposure = 6 => 300ms
+// Exposure = 7 => 350ms
+enum ltr303Exposure {
+	EXPOSURE_50ms = 1,
+	EXPOSURE_100ms = 0,
+	EXPOSURE_150ms = 4,
+	EXPOSURE_200ms = 2,
+	EXPOSURE_250ms = 5,
+	EXPOSURE_300ms = 6,
+	EXPOSURE_350ms = 7,
+	EXPOSURE_400ms = 3
+};
+
+// interval = 0 =>50ms
+// interval = 1 =>100ms
+// interval = 2 =>200ms
+// interval = 3 =>500ms (default)
+// interval = 4 =>1000ms
+// interval = 5 =>2000ms
+// interval = 6 =>2000ms
+// interval = 7 =>2000ms
+enum ltr303Interval {
+	LTR303_50ms_INTERVAL = 0,
+	LTR303_100ms_INTERVAL = 1,
+	LTR303_200ms_INTERVAL = 2,
+	LTR303_500ms_INTERVAL = 3,
+};
 
 class LTR303 {
-	public:
-		LTR303(void);
-			// LTR303 object
-			
-		boolean begin(void);
-			// Initialize LTR303 library with default address (0x29)
-			// Always returns true
-		
-		boolean setPowerUp(void);
-			// Turn on LTR303, begin integration
-			// Returns true (1) if successful, false (0) if there was an I2C error
-			// (Also see getError() below)
+   public:
+	/**
+	 * initializes the sensor.
+	 *
+	 * @param gain (enum) how much to amplify the reading (GAIN_1X)
+	 * @param exposure (enum) how long to keep the "shutter" open (EXPOSURE_100ms)
+	 * @param enableAutoGain change gain when new data received
+	 * @param port Wire instance (e.g Wire or Wire1)
+	 * @param addr i2c address of sensor
+	 * @retval 0 success
+	 * @retval 1 i2c data too long to fit in transmit buffer
+	 * @retval 2 i2c received NACK on transmit of address
+	 * @retval 3 i2c received NACK on transmit of data
+	 * @retval 4 i2c other error
+	 * @retval 5 i2c timeout
+	 */
+	uint8_t begin(ltr303Gain gain, ltr303Exposure exposure, bool enableAutoGain, TwoWire &port = Wire, uint8_t addr = LTR303_ADDR);
 
-		boolean setPowerDown(void);
-			// Turn off LTR303
-			// Returns true (1) if successful, false (0) if there was an I2C error
-			// (Also see getError() below)
+	/**
+	 * puts the sensor into active mode
+	 *
+	 * @retval 0 success
+	 * @retval 1 i2c data too long to fit in transmit buffer
+	 * @retval 2 i2c received NACK on transmit of address
+	 * @retval 3 i2c received NACK on transmit of data
+	 * @retval 4 i2c other error
+	 * @retval 5 i2c timeout
+	 */
+	uint8_t startPeriodicMeasurement();
 
-		boolean setControl(byte gain, boolean reset, boolean mode);
-			// Sets the gain, SW reset and mode of LTR303
-			// Default value is 0x00
-			// If gain = 0, device is set to 1X gain (default)
-			// If gain = 1, device is set to 2X gain
-			// If gain = 2, device is set to 4X gain
-			// If gain = 3, device is set to 8X gain
-			// If gain = 4, invalid
-			// If gain = 5, invalid
-			// If gain = 6, device is set to 48X gain
-			// If gain = 7, device is set to 96X gain
-			//----------------------------------------
-			// If reset = false(0), initial start-up procedure not started (default)
-			// If reset = true(1), initial start-up procedure started
-			//----------------------------------------
-			// If mode = false(0), stand-by mode (default)
-			// If mode = true(1), active mode
-			
-		boolean getControl(byte &gain, boolean reset, boolean mode);
-			// Gets the control register values
-			// Default value is 0x00
-			// If gain = 0, device is set to 1X gain (default)
-			// If gain = 1, device is set to 2X gain
-			// If gain = 2, device is set to 4X gain
-			// If gain = 3, device is set to 8X gain
-			// If gain = 4, invalid
-			// If gain = 5, invalid
-			// If gain = 6, device is set to 48X gain
-			// If gain = 7, device is set to 96X gain
-			//----------------------------------------
-			// If reset = false(0), initial start-up procedure not started (default)
-			// If reset = true(1), initial start-up procedure started
-			//----------------------------------------
-			// If mode = false(0), stand-by mode (default)
-			// If mode = true(1), active mode
-			// Returns true (1) if successful, false (0) if there was an I2C error
-			// (Also see getError() below)
-			
-			
-		boolean setMeasurementRate(byte integrationTime, byte measurementRate);
-			// Sets the integration time and measurement rate of the sensor
-			// integrationTime is the measurement time for each ALs cycle
-			// measurementRate is the interval between DATA_REGISTERS update
-			// measurementRate must be set to be equal or greater than integrationTime
-			// Default value is 0x03
-			// If integrationTime = 0, integrationTime will be 100ms (default)
-			// If integrationTime = 1, integrationTime will be 50ms
-			// If integrationTime = 2, integrationTime will be 200ms
-			// If integrationTime = 3, integrationTime will be 400ms
-			// If integrationTime = 4, integrationTime will be 150ms
-			// If integrationTime = 5, integrationTime will be 250ms
-			// If integrationTime = 6, integrationTime will be 300ms
-			// If integrationTime = 7, integrationTime will be 350ms
-			//------------------------------------------------------
-			// If measurementRate = 0, measurementRate will be 50ms
-			// If measurementRate = 1, measurementRate will be 100ms
-			// If measurementRate = 2, measurementRate will be 200ms
-			// If measurementRate = 3, measurementRate will be 500ms (default)
-			// If measurementRate = 4, measurementRate will be 1000ms
-			// If measurementRate = 5, measurementRate will be 2000ms
-			// If measurementRate = 6, measurementRate will be 2000ms
-			// If measurementRate = 7, measurementRate will be 2000ms
-			// Returns true (1) if successful, false (0) if there was an I2C error
-			// (Also see getError() below)
-			
-		boolean getMeasurementRate(byte &integrationTime, byte &measurementRate);
-			// Gets the value of Measurement Rate register
-			// Default value is 0x03
-			// If integrationTime = 0, integrationTime will be 100ms (default)
-			// If integrationTime = 1, integrationTime will be 50ms
-			// If integrationTime = 2, integrationTime will be 200ms
-			// If integrationTime = 3, integrationTime will be 400ms
-			// If integrationTime = 4, integrationTime will be 150ms
-			// If integrationTime = 5, integrationTime will be 250ms
-			// If integrationTime = 6, integrationTime will be 300ms
-			// If integrationTime = 7, integrationTime will be 350ms
-			//------------------------------------------------------
-			// If measurementRate = 0, measurementRate will be 50ms
-			// If measurementRate = 1, measurementRate will be 100ms
-			// If measurementRate = 2, measurementRate will be 200ms
-			// If measurementRate = 3, measurementRate will be 500ms (default)
-			// If measurementRate = 4, measurementRate will be 1000ms
-			// If measurementRate = 5, measurementRate will be 2000ms
-			// If measurementRate = 6, measurementRate will be 2000ms
-			// If measurementRate = 7, measurementRate will be 2000ms
-			// Returns true (1) if successful, false (0) if there was an I2C error
-			// (Also see getError() below)
+	/**
+	 * puts the sensor into idle mode
+	 *
+	 * @retval 0 success
+	 * @retval 1 i2c data too long to fit in transmit buffer
+	 * @retval 2 i2c received NACK on transmit of address
+	 * @retval 3 i2c received NACK on transmit of data
+	 * @retval 4 i2c other error
+	 * @retval 5 i2c timeout
+	 */
+	uint8_t endPeriodicMeasurement();
 
-		boolean getPartID(byte &partID);
-			// Gets the part number ID and revision ID of the chip
-			// Default value is 0x0A
-			// part number ID = 0x0A (default)
-			// Revision ID = 0x00
-			// Returns true (1) if successful, false (0) if there was an I2C error
-			// (Also see getError() below)
-		
-		boolean getManufacID(byte &manufacID);
-			// Gets the Manufacturers ID
-			// Default value is 0x05
-			// Returns true (1) if successful, false (0) if there was an I2C error
-			// (Also see getError() below)
-		
-		boolean getData(unsigned int &CH0, unsigned int &CH1);
-			// Gets the 16-bit channel 0 and channel 1 data
-			// Default value of both channels is 0x00
-			// Returns true (1) if successful, false (0) if there was an I2C error
-			// (Also see getError() below)
-		
-		boolean getStatus(boolean valid, byte &gain, boolean intrStatus, boolean dataStatus);
-			// Gets the status information of LTR303
-			// Default value is 0x00
-			// If valid = false(0), Sensor data is valid (default)
-			// If valid = true(1), Sensor data is invalid
-			//--------------------------------------------
-			// If gain = 0, device is set to 1X gain (default)
-			// If gain = 1, device is set to 2X gain
-			// If gain = 2, device is set to 4X gain
-			// If gain = 3, device is set to 8X gain
-			// If gain = 4, invalid
-			// If gain = 5, invalid
-			// If gain = 6, device is set to 48X gain
-			// If gain = 7, device is set to 96X gain
-			//---------------------------------------------
-			// If intrStatus = false(0), INTR in inactive (default)
-			// If intrStatus = true(1), INTR in active
-			//---------------------------------------------
-			// If dataStatus = false(0), OLD data (already read) (default)
-			// If dataStatus = true(1), NEW data
-			// Returns true (1) if successful, false (0) if there was an I2C error
-			// (Also see getError() below)
-			
-		boolean setInterruptControl(boolean intrMode, boolean polarity);
-			// Sets up interrupt operations
-			// Default value is 0x08
-			// If intrMode = false(0), INT pin is inactive (default)
-			// If intrMode = true(1), INT pin is active
-			//------------------------------------------------------
-			// If polarity = false(0), INT pin is active at logic 0 (default)
-			// If polarity = true(1), INT pin is active at logic 1
-			//------------------------------------------------------
-			// Returns true (1) if successful, false (0) if there was an I2C error
-			// (Also see getError() below)
-			
-		boolean getInterruptControl(boolean polarity, boolean intrMode);
-			// Sets up interrupt operations
-			// Default value is 0x08
-			// If polarity = false(0), INT pin is active at logic 0 (default)
-			// If polarity = true(1), INT pin is active at logic 1
-			//------------------------------------------------------
-			// If intrMode = false(0), INT pin is inactive (default)
-			// If intrMode = true(1), INT pin is active
-			//------------------------------------------------------
-			// Returns true (1) if successful, false (0) if there was an I2C error
-			// (Also see getError() below)
-			
-		boolean setThreshold(unsigned int upperLimit, unsigned int lowerLimit);
-			// Sets the upper limit and lower limit of the threshold
-			// Default value of upper threshold is 0xFF and lower threshold is 0x00
-			// Both the threshold are 16-bit integer values
-			// Returns true (1) if successful, false (0) if there was an I2C error
-			// (Also see getError() below)
-			
-		boolean getThreshold(unsigned int &upperLimit, unsigned int &lowerLimit);
-			// Gets the upper limit and lower limit of the threshold
-			// Default value of upper threshold is 0xFF and lower threshold is 0x00
-			// Both the threshold are 16-bit integer values
-			// Returns true (1) if successful, false (0) if there was an I2C error
-			// (Also see getError() below)
-			
-		boolean setIntrPersist(byte persist);
-			// Sets the interrupt persistance i.e. controls the N number of times the 
-			// measurement data is outside the range defined by upper and lower threshold
-			// Default value is 0x00
-			// If persist = 0, every sensor value out of threshold range (default)
-			// If persist = 1, every 2 consecutive value out of threshold range
-			// If persist = 2, every 3 consecutive value out of threshold range
-			// If persist = 3, every 4 consecutive value out of threshold range
-			// If persist = 4, every 5 consecutive value out of threshold range
-			// If persist = 5, every 6 consecutive value out of threshold range
-			// If persist = 6, every 7 consecutive value out of threshold range
-			// If persist = 7, every 8 consecutive value out of threshold range
-			// If persist = 8, every 9 consecutive value out of threshold range
-			// If persist = 9, every 10 consecutive value out of threshold range
-			// If persist = 10, every 11 consecutive value out of threshold range
-			// If persist = 11, every 12 consecutive value out of threshold range
-			// If persist = 12, every 13 consecutive value out of threshold range
-			// If persist = 13, every 14 consecutive value out of threshold range
-			// If persist = 14, every 15 consecutive value out of threshold range
-			// If persist = 15, every 16 consecutive value out of threshold range
-			// Returns true (1) if successful, false (0) if there was an I2C error
-			// (Also see getError() below)
-			
-		boolean getIntrPersist(byte &persist);
-			// Gets the interrupt persistance i.e. controls the N number of times the measurement data is outside the range defined by upper and lower threshold
-			// Default value is 0x00
-			// If persist = 0, every sensor value out of threshold range (default)
-			// If persist = 1, every 2 consecutive value out of threshold range
-			// If persist = 2, every 3 consecutive value out of threshold range
-			// If persist = 3, every 4 consecutive value out of threshold range
-			// If persist = 4, every 5 consecutive value out of threshold range
-			// If persist = 5, every 6 consecutive value out of threshold range
-			// If persist = 6, every 7 consecutive value out of threshold range
-			// If persist = 7, every 8 consecutive value out of threshold range
-			// If persist = 8, every 9 consecutive value out of threshold range
-			// If persist = 9, every 10 consecutive value out of threshold range
-			// If persist = 10, every 11 consecutive value out of threshold range
-			// If persist = 11, every 12 consecutive value out of threshold range
-			// If persist = 12, every 13 consecutive value out of threshold range
-			// If persist = 13, every 14 consecutive value out of threshold range
-			// If persist = 14, every 15 consecutive value out of threshold range
-			// If persist = 15, every 16 consecutive value out of threshold range
-			// Returns true (1) if successful, false (0) if there was an I2C error
-			// (Also see getError() below)
-		
-		boolean getLux(byte gain, byte integrationTime, unsigned int CH0, unsigned int CH1, double &lux);
-			// Convert raw data to lux
-			// gain: 0 (1X) or 7 (96X), see getControl()
-			// integrationTime: integration time in ms, from getMeasurementRate()
-			// CH0, CH1: results from getData()
-			// lux will be set to resulting lux calculation
-			// returns true (1) if calculation was successful
-			// returns false (0) AND lux = 0.0 IF EITHER SENSOR WAS SATURATED (0XFFFF)
-		
-		byte getError(void);
-			// If any library command fails, you can retrieve an extended
-			// error code using this command. Errors are from the wire library: 
-			// 0 = Success
-			// 1 = Data too long to fit in transmit buffer
-			// 2 = Received NACK on transmit of address
-			// 3 = Received NACK on transmit of data
-			// 4 = Other error
+	/**
+	 * checks for correct response, manufacturer id and part id.
+	 *
+	 * @param port Wire instance (e.g Wire or Wire1)
+	 * @param stream debug output pointer (e.g. &Serial)
+	 * @param addr i2c address of sensor
+	 * @returns true if device correctly connected, otherwise false
+	 */
+	bool isConnected(TwoWire &port = Wire, Stream *stream = &Serial, uint8_t addr = LTR303_ADDR);
 
-	private:
+	/**
+	 * gets Raw Data from sensor (no checking if it is valid)
+	 *
+	 * @param visibleAndIRraw where to send the visible and IR sensor data
+	 * @param IRraw where to send the IR sensor output data
+	 * @retval 0 success
+	 * @retval 1 i2c data too long to fit in transmit buffer
+	 * @retval 2 i2c received NACK on transmit of address
+	 * @retval 3 i2c received NACK on transmit of data
+	 * @retval 4 i2c other error
+	 * @retval 5 i2c timeout
+	 * @retval 6 no data received on request
+	 * @retval 7 no new data available
+	 */
+	uint8_t getData(uint16_t &visibleAndIRraw, uint16_t &IRraw);
 
-		boolean readByte(byte address, byte &value);
-			// Reads a byte from a LTR303 address
-			// Address: LTR303 address (0 to 15)
-			// Value will be set to stored byte
-			// Returns true (1) if successful, false (0) if there was an I2C error
-			// (Also see getError() above)
-	
-		boolean writeByte(byte address, byte value);
-			// Write a byte to a LTR303 address
-			// Address: LTR303 address (0 to 15)
-			// Value: byte to write to address
-			// Returns true (1) if successful, false (0) if there was an I2C error
-			// (Also see getError() above)
+	/**
+	 * gets Raw, checks validity, adjusts gain, and sends back a double
+	 *
+	 * @param lux where to send the output value
+	 * @returns true if data is valid, otherwise false
+	 */
+	bool getLux(double &lux);
 
-		boolean readUInt(byte address, unsigned int &value);
-			// Reads an unsigned integer (16 bits) from a LTR303 address (low byte first)
-			// Address: LTR303 address (0 to 15), low byte first
-			// Value will be set to stored unsigned integer
-			// Returns true (1) if successful, false (0) if there was an I2C error
-			// (Also see getError() above)
+   private:
+	uint8_t reset();
 
-		boolean writeUInt(byte address, unsigned int value);
-			// Write an unsigned integer (16 bits) to a LTR303 address (low byte first)
-			// Address: LTR303 address (0 to 15), low byte first
-			// Value: unsigned int to write to address
-			// Returns true (1) if successful, false (0) if there was an I2C error
-			// (Also see getError() above)
-			
-		byte _i2c_address;
-		
-		byte _error;
+	bool newDataAvailable();
+
+	// Sets the gain, SW reset and mode of LTR303
+	uint8_t setControlRegister(bool reset = false, bool mode = true);
+
+	bool autoGain(uint16_t visibleAndIRraw, uint16_t IRraw);
+	uint8_t setExposureTime();
+
+	uint8_t read16bitInt(uint8_t address, uint16_t &value);
+
+	uint8_t _i2c_address;
+	TwoWire *_i2cPort;
+	Stream *_debug_output_stream = &Serial;
+	uint8_t _error;
+	bool _dataValid;
+	ltr303Gain _gain;
+	double _gainCompensation;
+	ltr303Exposure _exposure;
+	double _exposureCompensation;
+	bool _autoGainEnabled;
 };
 
 #endif
