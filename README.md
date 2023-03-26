@@ -49,4 +49,4 @@ if (light.isConnected(Wire, &Serial) == true){...
 Origin created by Lovelesh Patel in 2015
 https://github.com/automote/LTR303
 
-MIT license
+To help support my work check out my store: https://keastudios.co.nz/
