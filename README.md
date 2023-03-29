@@ -1,5 +1,6 @@
 # LTR303 Library
 This is a library to interface with the LTR303 light sensor in Arduino using the I2C protocol.
+This is a low-cost and compact ambient light sensor and can not be used to precisely measure lux, see the VEML7700 for that use case.
 
 ## Features
 - use multiple I2C Busses
