@@ -157,7 +157,7 @@ class LTR303 {
 	bool isConnected(TwoWire &port = Wire, Stream *stream = &Serial, uint8_t addr = LTR303_ADDR);
 
 	/**
-	 * gets Raw Data from sensor (no checking if it is valid)
+	 * gets Raw light count from sensor (no gain or exposure compensation and no checking if data is valid)
 	 *
 	 * @param visibleAndIRraw where to send the visible and IR sensor data
 	 * @param IRraw where to send the IR sensor output data
@@ -173,12 +173,12 @@ class LTR303 {
 	uint8_t getData(uint16_t &visibleAndIRraw, uint16_t &IRraw);
 
 	/**
-	 * gets Raw, checks validity, adjusts gain, and sends back a double
+	 * gets Raw, checks validity, adjusts for gain and exposure and scales to passes back a approximate lux
 	 *
 	 * @param lux where to send the output value
-	 * @returns true if data is valid, otherwise false
+	 * @returns true if data returned is valid, otherwise false
 	 */
-	bool getLux(double &lux);
+	bool getApproximateLux(double &lux);
 
    private:
 	uint8_t reset();
@@ -188,7 +188,7 @@ class LTR303 {
 	// Sets the gain, SW reset and mode of LTR303
 	uint8_t setControlRegister(bool reset = false, bool mode = true);
 
-	bool autoGain(uint16_t visibleAndIRraw, uint16_t IRraw);
+	bool autoGain(uint16_t visibleAndIRraw);
 	uint8_t setExposureTime();
 
 	uint8_t read16bitInt(uint8_t address, uint16_t &value);

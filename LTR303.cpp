@@ -38,13 +38,11 @@ uint8_t LTR303::begin(ltr303Gain gain, ltr303Exposure exposure, bool enableAutoG
 	_i2c_address = addr;
 
 	_i2cPort->beginTransmission(_i2c_address);
-	_error = _i2cPort->endTransmission();
+	_error = _i2cPort->endTransmission(true);
 
-	if (_error == 0) {
-		reset();
-		setExposureTime();
-		startPeriodicMeasurement();
-	}
+	reset();
+	setExposureTime();
+	startPeriodicMeasurement();
 	return _error;
 }
 
@@ -62,8 +60,10 @@ bool LTR303::isConnected(TwoWire &port, Stream *stream, uint8_t addr) {
 
 	_debug_output_stream = stream;
 
+	reset();
+
 	_i2cPort->beginTransmission(_i2c_address);
-	_error = _i2cPort->endTransmission();
+	_error = _i2cPort->endTransmission(true);
 
 	char addrCheck[32];
 	if (_error != 0) {
@@ -75,7 +75,7 @@ bool LTR303::isConnected(TwoWire &port, Stream *stream, uint8_t addr) {
 
 	_i2cPort->beginTransmission(_i2c_address);
 	_i2cPort->write(LTR303_MANUFAC_ID);
-	_i2cPort->endTransmission();
+	_i2cPort->endTransmission(true);
 	uint8_t manufacID = 0;
 	if (_i2cPort->requestFrom(_i2c_address, (uint8_t)1)) {
 		manufacID = _i2cPort->read();
@@ -88,7 +88,7 @@ bool LTR303::isConnected(TwoWire &port, Stream *stream, uint8_t addr) {
 
 	_i2cPort->beginTransmission(_i2c_address);
 	_i2cPort->write(LTR303_PART_ID);
-	_i2cPort->endTransmission();
+	_i2cPort->endTransmission(true);
 	uint8_t partID = 0;
 	if (_i2cPort->requestFrom(_i2c_address, (uint8_t)1)) {
 		partID = _i2cPort->read();
@@ -119,21 +119,21 @@ uint8_t LTR303::getData(uint16_t &visibleAndIRraw, uint16_t &IRraw) {
 	return 7;  // no new data available
 }
 
-bool LTR303::getLux(double &lux) {
+bool LTR303::getApproximateLux(double &lux) {
 	uint16_t visibleAndIRraw = 0, IRraw = 0;
 
-	if(getData(visibleAndIRraw, IRraw) == 0){
-		if (_autoGainEnabled){
-			if (autoGain(visibleAndIRraw, IRraw) == false){
+	if (getData(visibleAndIRraw, IRraw) == 0) {
+		if (_autoGainEnabled) {
+			if (autoGain(visibleAndIRraw) == false) {
 				return false;
 			}
 		}
 
-		// Convert from unsigned integer to floating point
-		double CH0 = (double)visibleAndIRraw;
-		double CH1 = (double)IRraw;
+		// 		( Counts at 1x gain)   counts per second
+		lux = (((double)visibleAndIRraw / _gainCompensation) / _exposureCompensation) * 4.86979166667;
 
-		lux = (0.5926 * CH0 - 0.1185 * CH1) / _gainCompensation / _exposureCompensation;
+		//Serial.printf("%i,%3.2f,%3.2f,%8.2f\n\r", visibleAndIRraw, _gainCompensation, _exposureCompensation, lux);
+
 		return _dataValid;
 	}
 	return false;
@@ -152,7 +152,7 @@ bool LTR303::newDataAvailable() {
 
 	_i2cPort->beginTransmission(_i2c_address);
 	_i2cPort->write(LTR303_STATUS);
-	_i2cPort->endTransmission();
+	_i2cPort->endTransmission(true);
 
 	if (_i2cPort->requestFrom(_i2c_address, (uint8_t)1) == 1) {
 		uint8_t status = _i2cPort->read();
@@ -218,10 +218,10 @@ uint8_t LTR303::setControlRegister(bool reset, bool mode) {
 	return _i2cPort->endTransmission(true);
 }
 
-bool LTR303::autoGain(uint16_t visibleAndIRraw, uint16_t IRraw){
+bool LTR303::autoGain(uint16_t visibleAndIRraw) {
 	// Determine if either sensor overexposed (58982 = ~50% of max)
 	// If so, adjust gain down
-	if ((visibleAndIRraw > 58982) || (IRraw > 58982)) {
+	if (visibleAndIRraw > 58982) {
 		switch (_gain) {
 			case GAIN_1X:
 				return true;
@@ -251,7 +251,7 @@ bool LTR303::autoGain(uint16_t visibleAndIRraw, uint16_t IRraw){
 
 	// Determine if either sensor underexposed (655 = ~1% of max)
 	// If so, adjust gain down
-	if ((visibleAndIRraw < 655) || (IRraw < 655)) {
+	if (visibleAndIRraw < 655) {
 		switch (_gain) {
 			case GAIN_96X:
 				return true;
@@ -310,7 +310,7 @@ uint8_t LTR303::setExposureTime() {
 
 	switch (_exposure) {
 		case EXPOSURE_50ms:
-			_exposureCompensation = 0.5;
+			_exposureCompensation = 0.05;
 			measurementInterval = LTR303_50ms_INTERVAL;
 			break;
 

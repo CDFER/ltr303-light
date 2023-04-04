@@ -17,19 +17,19 @@ This is a library to interface with the LTR303 light sensor in Arduino using the
 ### Setup
 ```c++
 #include "ltr303.h"
-LTR303 light;
+LTR303 lightSensor;
 double lux = 0;
 
 Wire.begin();
-light.begin(GAIN_48X, EXPOSURE_400ms, true);
+lightSensor.begin(GAIN_48X, EXPOSURE_400ms, true, Wire);
 ```
 
 ### Loop
 ```c++
-light.getLux(lux);
+lightSensor.getApproximateLux(lux);
 Serial.printf("%8.4f,\n\r",lux);
 
-vTaskDelay(400 / portTICK_PERIOD_MS);
+vTaskDelay(400 / portTICK_PERIOD_MS); //wait for next exposure to finish
 ```
 
 ### Verify Correct Sensor Connection
