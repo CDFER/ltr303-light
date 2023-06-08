@@ -1,22 +1,25 @@
 # LTR303 Library
-This is a library to interface with the LTR303 light sensor in Arduino using the I2C protocol.
-This is a low-cost and compact ambient light sensor and can not be used to precisely measure lux, see the VEML7700 for that use case.
+
+This library provides an interface for the LTR303 light sensor in Arduino using the I2C protocol. The LTR303 is a low-cost and compact ambient light sensor. Please note that it is not suitable for precise lux measurements; for that use case, consider the VEML7700 sensor.
 
 ## Features
-- use multiple I2C Busses
-- option to auto-adjust the gain setting in flight
-- doxygen comments for all public functions
-- returns error codes
-- isConnected() function 
+
+- Supports multiple I2C buses
+- Option to auto-adjust the gain setting during operation
+- Includes doxygen comments for all public functions
+- Returns error codes for easier debugging
+- Provides the `isConnected()` function to check the sensor connection status
 
 ## Warnings
-- not all functions are implemented
-- not compatible with other ltr303 Arduino libraries
-- only tested with the esp32
-- under development (as of March 2023)
+
+- Not all functions are implemented
+- Not compatible with other LTR303 Arduino libraries
+- Only tested with the ESP32 platform
+- Under development (as of March 2023)
 
 ### Setup
-```c++
+
+```cpp
 #include "ltr303.h"
 LTR303 lightSensor;
 double lux = 0;
@@ -26,28 +29,36 @@ lightSensor.begin(GAIN_48X, EXPOSURE_400ms, true, Wire);
 ```
 
 ### Loop
-```c++
-lightSensor.getApproximateLux(lux);
-Serial.printf("%8.4f,\n\r",lux);
 
-vTaskDelay(400 / portTICK_PERIOD_MS); //wait for next exposure to finish
+```cpp
+lightSensor.getApproximateLux(lux);
+Serial.printf("%8.4f,\n\r", lux);
+
+vTaskDelay(400 / portTICK_PERIOD_MS); // Wait for the next exposure to finish
 ```
 
 ### Verify Correct Sensor Connection
-checks for correct  i2c response, manufacturer id and part id.
-Prints a human-readable error report to provided interface stream (serial by default)
-@returns true if the device is correctly connected, otherwise false
-```c++
-if (light.isConnected(Wire, &Serial) == true){...
+
+This function checks for the correct I2C response, manufacturer ID, and part ID. It prints a human-readable error report to the provided interface stream (Serial by default) and returns `true` if the device is correctly connected; otherwise, it returns `false`.
+
+```cpp
+if (light.isConnected(Wire, &Serial) == true) {
+    // Sensor is correctly connected
+    // Perform actions accordingly
+} else {
+    // Sensor connection is not successful
+    // Handle the error
+}
 ```
 
-## 🖼️ Schematic
+## Schematic
+
 ![Schematic](/images/schematic.png)
-- I have tested this up to 400kbps with the esp32 and it works great (only using esp32 internal pullups)
 
+- The library has been tested up to 400kbps with the ESP32 platform using internal pullups.
 
-## Based on the awesome work of Lovelesh Patel @thingtronics
-Origin created by Lovelesh Patel in 2015
-https://github.com/automote/LTR303
+## Acknowledgements
 
-To help support my work check out my store: https://keastudios.co.nz/
+This library is based on the original work of Lovelesh Patel in 2015. You can find the original repository at [https://github.com/automote/LTR303](https://github.com/automote/LTR303).
+
+To support the developer's work, please visit their store at [https://keastudios.co.nz/](https://keastudios.co.nz/).
