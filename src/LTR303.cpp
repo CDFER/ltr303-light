@@ -74,14 +74,14 @@ bool LTR303::isConnected(TwoWire &port, Stream *stream, uint8_t addr) {
 	reset();  // not all registers are available when periodic recording is on reset to standby mode
 
 	_i2cPort->beginTransmission(_i2c_address);
-	_i2cPort->write(LTR303_MANUFAC_ID);
+	_i2cPort->write(LTR303_MANUFACTURER_ID);
 	_i2cPort->endTransmission(true);
-	uint8_t manufacID = 0;
+	uint8_t manufacturerID = 0;
 	if (_i2cPort->requestFrom(_i2c_address, (uint8_t)1)) {
-		manufacID = _i2cPort->read();
+		manufacturerID = _i2cPort->read();
 	}
 
-	if (manufacID != 0x05) {
+	if (manufacturerID != LTR303_MANUFACTURER_ID) {
 		_debug_output_stream->printf("LTR303 returned unknown manufacture ID: 0x%02X\r\n", manufacID);
 		return false;
 	}
@@ -94,13 +94,20 @@ bool LTR303::isConnected(TwoWire &port, Stream *stream, uint8_t addr) {
 		partID = _i2cPort->read();
 	}
 
-	if (partID != 0xA0) {
-		_debug_output_stream->printf("LTR303 returned part number: 0x%02X\r\n", partID);
+	if (partID != LTR303_PART_ID) {
+		_debug_output_stream->printf("LTR303 returned unknown part number: 0x%02X\r\n", partID);
 		return false;
 	}
 
-	_debug_output_stream->printf("LTR303 Connected Correctly\r\n");
-	return true;
+	_error = startPeriodicMeasurement();
+
+	if (_error == 0){
+		_debug_output_stream->printf("LTR303 Connected Correctly\r\n");
+		return true;
+	} else {
+		_debug_output_stream->printf("LTR303 returned startPeriodicMeasurement() error %i\r\n", _error);
+		return true;
+	}
 }
 
 uint8_t LTR303::getData(uint16_t &visibleAndIRraw, uint16_t &IRraw) {

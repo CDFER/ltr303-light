@@ -1,12 +1,26 @@
 {
   "name": "ltr303-light",
-  "keywords": "sensor, light",
-  "description": "A library for LTR303",
+  "version": "1.1.0",
+  "description": "A library for LTR303 light sensor",
+  "keywords": [
+    "light",
+    "lux",
+    "ambient",
+    "ltr303",
+    "i2c"
+  ],
   "repository":
   {
     "type": "git",
     "url": "https://github.com/CDFER/ltr303-light.git"
   },
+  "authors": {
+    "name": "Chris Dirks",
+    "url": "https://keastudios.co.nz/about.htm",
+    "maintainer": true
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/CDFER/ltr303-light",
   "frameworks": "arduino",
-  "platforms": "espressif32"
+  "platforms": "*"
 }

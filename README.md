@@ -12,10 +12,8 @@ This library provides an interface for the LTR303 light sensor in Arduino using 
 
 ## Warnings
 
-- Not all functions are implemented
-- Not compatible with other LTR303 Arduino libraries
-- Only tested with the ESP32 platform
-- Under development (as of March 2023)
+- Only tested with the ESP32 and ESPS2
+- Interrupt based triggers not implemented
 
 ### Setup
 
@@ -55,7 +53,7 @@ if (light.isConnected(Wire, &Serial) == true) {
 
 ![Schematic](/images/schematic.png)
 
-- The library has been tested up to 400kbps with the ESP32 platform using internal pullups.
+- The library has been tested at 400khz (for over a year) with the ESP32 using internal pullups with no errors.
 
 ## Acknowledgements
 
