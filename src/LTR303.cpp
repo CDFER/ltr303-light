@@ -149,8 +149,6 @@ bool LTR303::getApproximateLux(double &lux) {
     return false;
 }
 
-// Private functions:
-
 bool LTR303::newDataAvailable() {
     // Gets the status information of LTR303
     // Default value is 0x00
@@ -176,6 +174,31 @@ bool LTR303::newDataAvailable() {
     _dataValid = false;
     return false;
 }
+
+const char *LTR303::getErrorText(uint8_t errorCode) {
+    switch (errorCode) {
+        case 0:
+            return "No Error: Transaction completed successfully";
+        case 1:
+            return "Data too large to fit in I2C transmission buffer. Try reducing the data size or increasing the buffer size.";
+        case 2:
+            return "I2C device did not acknowledge address. Check the device wiring and try again.";
+        case 3:
+            return "I2C device did not acknowledge data. Check the data being transmitted and try again.";
+        case 4:
+            return "Unknown I2C error occurred. Check the I2C bus for errors or faults.";
+        case 5:
+            return "I2C transaction timed out. Increase the timeout value or check the I2C wiring.";
+        case 6:
+            return "Received bytes do not match expected bytes. Check the data transmission and reception code.";
+        case 7:
+            return "No new data available from sensor. Maybe wait a bit longer or make sure periodic measurements have been started";
+        default:
+            return "Unknown error occurred";
+    }
+}
+
+// Private functions:
 
 uint8_t LTR303::setControlRegister(bool reset, bool mode) {
     //----------------------------------------
@@ -381,28 +404,4 @@ uint8_t LTR303::read16bitInt(uint8_t address, uint16_t &value) {
         return 6;  // no bytes received
     }
     return _error;  // endTransmission Error
-}
-
-
-const char *LTR303::getErrorText(uint8_t errorCode) {
-    switch (errorCode) {
-        case 0:
-            return "Success";
-        case 1:
-            return "I2C data too long to fit in transmit buffer";
-        case 2:
-            return "I2C received NACK on transmit of address";
-        case 3:
-            return "I2C received NACK on transmit of data";
-        case 4:
-            return "I2C other error";
-        case 5:
-            return "I2C timeout";
-        case 6:
-            return "bytesReceived(%i) != bytesRequested(%i)";
-        case 7:
-            return "Measurement out of range";
-        default:
-            return "Unknown error";
-    }
 }

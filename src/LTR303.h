@@ -33,6 +33,8 @@ THE SOFTWARE.
 #include <Arduino.h>
 #include <Wire.h>
 
+#define LTR303_LIB_VERSION "1.1.0"
+
 // Default I2C address for the sensor
 #define LTR303_ADDR 0x29
 
@@ -144,21 +146,25 @@ class LTR303 {
     bool getApproximateLux(double &lux);
 
     /**
+     * Checks if new data is available for retrieval
+	 * 
+     * @return true if data is available, otherwise false
+     */
+    bool newDataAvailable();
+
+    /**
      * Converts an error code into descriptive text.
      *
      * This function takes an error code and returns a string describing what that error means. It can be used to display error messages to users.
      * @param errorCode The error returned by function that you want to convert
      * @return A pointer to a const char array containing the descriptive text of the error. If the error code is not recognized, "Unknown error" is returned.
-     * @note The char array will never be longer than 48 characters
+     * @note The char array will never be longer than 128 characters
      */
     const char *getErrorText(uint8_t errorCode);
 
   private:
     // Resets the sensor to its default state
     uint8_t reset();
-
-    // Checks if new data is available for retrieval
-    bool newDataAvailable();
 
     // Sets the gain, reset register, and mode of the LTR303
     uint8_t setControlRegister(bool reset = false, bool mode = true);
@@ -173,33 +179,33 @@ class LTR303 {
     uint8_t read16bitInt(uint8_t address, uint16_t &value);
 
     // The I2C address of the LTR303 sensor.
-    uint8_t _i2c_address;
+    uint8_t _i2c_address = LTR303_ADDR;
 
     // The I2C port used to communicate with the LTR303 sensor.
-    TwoWire *_i2cPort;
+    TwoWire *_i2cPort = &Wire;
 
     // The debug output stream, defaulting to Serial if not specified.
     Stream *_debug_output_stream = &Serial;
 
     // An error code returned by various functions in the class.
-    uint8_t _error;
+    uint8_t _error = 0;
 
     // A flag indicating whether new data is available from the LTR303 sensor.
-    bool _dataValid;
+    bool _dataValid = false;
 
     // The current gain setting for the LTR303 sensor.
-    ltr303Gain _gain;
+    ltr303Gain _gain = GAIN_1X;
 
     // The compensation factor for the gain of the LTR303 sensor.
-    double _gainCompensation;
+    double _gainCompensation = 1;  //set for 1x
 
     // The current exposure time set for the LTR303 sensor.
-    ltr303Exposure _exposure;
+    ltr303Exposure _exposure = EXPOSURE_100ms;
 
     // The compensation factor for the exposure time of the LTR303 sensor.
-    double _exposureCompensation;
+    double _exposureCompensation = 0.1;  //set for 100ms
 
     // A flag indicating whether automatic gain adjustment is enabled for the LTR303 sensor.
-    bool _autoGainEnabled;
+    bool _autoGainEnabled = true;
 };
 #endif
