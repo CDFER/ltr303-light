@@ -6,7 +6,7 @@ With its small size (2.0mm x 2.0mm x 0.7mm) and low power consumption (220uA act
 
 The LTR303 also boasts several features, including built-in temperature compensation, immunity to IR/UV light sources, and automatic rejection of 50/60Hz flicker. With a dynamic range from 0.01 lux to 64k lux and 16-bit effective resolution, this sensor is capable of providing fairly accurate and precise measurements, however it is not suitable for precise lux measurements; for that use case, consider the VEML7700 sensor.
 
-## Features
+## Library Features
 
 * Supports multiple I2C buses
 * Option to auto-adjust the gain setting during operation
